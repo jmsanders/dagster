@@ -1,3 +1,5 @@
+import sys
+
 import click
 import pytest
 from click.testing import CliRunner
@@ -9,6 +11,7 @@ from dagster.cli.workspace.cli_target import (
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 
 def load_pipeline_via_cli_runner(cli_args):
@@ -20,10 +23,17 @@ def load_pipeline_via_cli_runner(cli_args):
         with get_external_pipeline_from_kwargs(
             kwargs, DagsterInstance.ephemeral()
         ) as external_pipeline:
-            capture_result["external_pipeline"] = external_pipeline
+
+            try:
+                capture_result["external_pipeline"] = external_pipeline
+            except:
+                print("EXCEPTION: " + repr(serializable_error_info_from_exc_info(sys.exc_info())))
 
     runner = CliRunner()
     result = runner.invoke(command, cli_args)
+
+    print("OUTPUT: " + result.output)
+    print("EXCEPTION: " + repr(result.exception))
 
     external_pipeline = capture_result["external_pipeline"]
     return result, external_pipeline
@@ -31,6 +41,7 @@ def load_pipeline_via_cli_runner(cli_args):
 
 def successfully_load_pipeline_via_cli(cli_args):
     result, external_pipeline = load_pipeline_via_cli_runner(cli_args)
+
     assert result.exit_code == 0
     assert isinstance(external_pipeline, ExternalPipeline)
     return external_pipeline
