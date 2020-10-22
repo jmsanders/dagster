@@ -99,7 +99,10 @@ def grpc_schedule_origin(schedule_name):
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable, python_file=__file__, attribute="the_repo"
     )
+    print("CREATING SERVER PROCESS")
     server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
+
+    print("CREATING CLIENT")
     with server_process.create_ephemeral_client() as api_client:
         repo_origin = RepositoryGrpcServerOrigin(
             host=api_client.host,
@@ -107,8 +110,13 @@ def grpc_schedule_origin(schedule_name):
             socket=api_client.socket,
             repository_name="the_repo",
         )
+        print("YIELDING ORIGIN")
         yield repo_origin.get_schedule_origin(schedule_name)
+        print("YIELDED ORIGIN, LEAVING CLIENT")
+
+    print("WAITING FOR SERVER PROCESS")
     server_process.wait()
+    print("WAITED FOR SERVER PROCESS")
 
 
 @pytest.mark.parametrize(
@@ -207,11 +215,15 @@ def test_skip(schedule_origin_context):
 @pytest.mark.parametrize("schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin])
 def test_wrong_config(schedule_origin_context):
     with instance_for_test() as instance:
+        print("MADE INSTANCE")
         with schedule_origin_context("wrong_config_schedule") as schedule_origin:
+            print("MADE SCHEDULE CONTEXT LAUNCHING")
             result = sync_launch_scheduled_execution(schedule_origin)
 
             assert isinstance(result, ScheduledExecutionFailed)
             assert "DagsterInvalidConfigError" in result.errors[0].to_string()
+
+            print("CHECKING THAT RUN IS FAILURE")
 
             run = instance.get_run_by_id(result.run_id)
             assert run.is_failure
@@ -219,11 +231,14 @@ def test_wrong_config(schedule_origin_context):
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
             assert ticks[0].status == ScheduleTickStatus.SUCCESS
 
+            print("TICK IS SUCCESS LEAVING")
+
+    print("DONE WITH TEST")
+
 
 def test_bad_load():
+    print("VERY START OF BAD LOAD")
     with instance_for_test() as instance:
-        instance = DagsterInstance.get()
-
         working_directory = os.path.dirname(__file__)
         recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
         schedule = recon_repo.get_reconstructable_schedule("also_doesnt_exist")
@@ -256,7 +271,6 @@ def test_grpc_server_down():
         )
         down_grpc_schedule_origin = down_grpc_repo_origin.get_schedule_origin("down_schedule")
 
-        instance = DagsterInstance.get()
         result = sync_launch_scheduled_execution(down_grpc_schedule_origin)
 
         assert isinstance(result, ScheduledExecutionFailed)
