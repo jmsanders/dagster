@@ -128,6 +128,8 @@ def environ(env):
 
 @contextmanager
 def instance_for_test(overrides=None, enable_telemetry=False):
+    print("OPENING TEMPDIR")
+
     with seven.TemporaryDirectory() as temp_dir:
         with instance_for_test_tempdir(temp_dir, overrides, enable_telemetry) as instance:
             yield instance
@@ -139,26 +141,39 @@ def instance_for_test_tempdir(temp_dir, overrides=None, enable_telemetry=False):
     overrides = merge_dicts(
         overrides if overrides else {}, {"telemetry": {"enabled": enable_telemetry}}
     )
+
+    print("SETTING ENVIRON")
+
     # Write any overrides to disk and set DAGSTER_HOME so that they will still apply when
     # DagsterInstance.get() is called from a different process
     with environ({"DAGSTER_HOME": temp_dir}):
+        print("OPENING DAGSTER YAML")
+
         with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
             yaml.dump(overrides, fd, default_flow_style=False)
+        print("GETTING DAGSTER INSTANCE")
         with DagsterInstance.get() as instance:
             try:
+                print("YIELDING INSTANCE")
                 yield instance
+                print("YIELDED INSTANCE")
             finally:
                 cleanup_test_instance(instance)
 
 
 def cleanup_test_instance(instance):
+    print("CLEANING UP INSTNACE")
     check.inst_param(instance, "instance", DagsterInstance)
     # To avoid filesystem contention when we close the temporary directory, wait for
     # all runs to reach a terminal state, and close any subprocesses or threads
     # that might be accessing the run history DB.
+    print("JOINING RUN LAUNCHER")
     instance.run_launcher.join()
+    print("JOINED RUN LAUNCHER")
     if isinstance(instance.run_launcher, (DefaultRunLauncher, GrpcRunLauncher)):
+        print("CLEANING UP MANAGED GPRC SERVERS")
         instance.run_launcher.cleanup_managed_grpc_servers()
+        print("CLEANED UP MANAGED GRPC SERVERS")
 
 
 def create_run_for_test(

@@ -8,7 +8,7 @@ from dagster.utils.temp_file import get_temp_file_name
 def execute_command_in_subprocess(parts):
     check.list_param(parts, "parts", of_type=str)
     try:
-        subprocess.check_output(parts, stderr=subprocess.STDOUT)
+        subprocess.check_output(parts, stderr=subprocess.STDOUT, timeout=60)
     except subprocess.CalledProcessError as e:
         raise DagsterIPCProtocolError(
             "Error when executing API command {cmd}: {output}".format(
