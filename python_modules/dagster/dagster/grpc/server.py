@@ -153,7 +153,13 @@ def build_code_pointers_by_repo_name(loadable_target_origin, loadable_repository
                 loadable_repository_symbol.attribute,
                 loadable_target_origin.working_directory,
             )
-        if loadable_target_origin.module_name:
+        elif loadable_target_origin.use_python_package:
+            repository_code_pointer_dict[
+                loadable_repository_symbol.repository_name
+            ] = CodePointer.from_python_package(
+                loadable_target_origin.module_name, loadable_repository_symbol.attribute,
+            )
+        else:
             repository_code_pointer_dict[
                 loadable_repository_symbol.repository_name
             ] = CodePointer.from_module(
@@ -1110,6 +1116,13 @@ def open_server_process(
                 else []
             )
             + (["-a", loadable_target_origin.attribute] if loadable_target_origin.attribute else [])
+            + (
+                [
+                    "--use-python-package"
+                    if loadable_target_origin.use_python_package
+                    else "--no-use-python-package"
+                ]
+            )
         )
 
     server_process = open_ipc_subprocess(subprocess_args)

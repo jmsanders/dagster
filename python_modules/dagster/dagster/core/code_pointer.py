@@ -218,7 +218,7 @@ def load_python_module(module_name, warn_only=False, remove_from_path_fn=None):
                     (
                         "Module {module} was resolved using the working directory. The ability to "
                         "load uninstalled modules from the working directory is deprecated and "
-                        "will be removed in a future release.  Please use the python-file based "
+                        "will be removed in the 0.10.0 dagster release. Please use the python-file based "
                         "load arguments or install {module} to your python environment."
                     ).format(module=module_name)
                 )
@@ -322,7 +322,10 @@ class ModuleCodePointer(namedtuple("_ModuleCodePointer", "module fn_name"), Code
 
     def get_loadable_target_origin(self, executable_path):
         return LoadableTargetOrigin(
-            executable_path=executable_path, module_name=self.module, attribute=self.fn_name,
+            executable_path=executable_path,
+            module_name=self.module,
+            attribute=self.fn_name,
+            use_python_package=False,
         )
 
 
@@ -352,7 +355,10 @@ class PackageCodePointer(namedtuple("_PackageCodePointer", "module attribute"), 
 
     def get_loadable_target_origin(self, executable_path):
         return LoadableTargetOrigin(
-            executable_path=executable_path, module_name=self.module, attribute=self.attribute,
+            executable_path=executable_path,
+            module_name=self.module,
+            attribute=self.attribute,
+            use_python_package=True,
         )
 
 

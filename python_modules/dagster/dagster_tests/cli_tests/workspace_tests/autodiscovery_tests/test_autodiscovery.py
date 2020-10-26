@@ -133,7 +133,7 @@ def test_local_directory_module():
         match=re.escape(
             "Module autodiscover_in_module was resolved using the working directory. The ability "
             "to load uninstalled modules from the working directory is deprecated and will be "
-            "removed in a future release.  Please use the python-file based load arguments or "
+            "removed in the 0.10.0 dagster release. Please use the python-file based load arguments or "
             "install autodiscover_in_module to your python environment."
         ),
     ):

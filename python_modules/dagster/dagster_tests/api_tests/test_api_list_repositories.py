@@ -7,7 +7,7 @@ from dagster.api.list_repositories import (
     sync_list_repositories_ephemeral_grpc,
     sync_list_repositories_grpc,
 )
-from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
+from dagster.core.code_pointer import FileCodePointer, PackageCodePointer
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.grpc.types import LoadableRepositorySymbol
 from dagster.utils import file_relative_path
@@ -237,10 +237,10 @@ def test_sync_list_python_module_grpc():
     repository_code_pointer_dict = response.repository_code_pointer_dict
 
     assert "hello_world_repository" in repository_code_pointer_dict
-    assert isinstance(repository_code_pointer_dict["hello_world_repository"], ModuleCodePointer)
+    assert isinstance(repository_code_pointer_dict["hello_world_repository"], PackageCodePointer)
     assert repository_code_pointer_dict["hello_world_repository"].module == module_name
     assert (
-        repository_code_pointer_dict["hello_world_repository"].fn_name == "hello_world_repository"
+        repository_code_pointer_dict["hello_world_repository"].attribute == "hello_world_repository"
     )
 
 
@@ -271,10 +271,10 @@ def test_sync_list_python_module_attribute_grpc():
     repository_code_pointer_dict = response.repository_code_pointer_dict
 
     assert "hello_world_repository" in repository_code_pointer_dict
-    assert isinstance(repository_code_pointer_dict["hello_world_repository"], ModuleCodePointer)
+    assert isinstance(repository_code_pointer_dict["hello_world_repository"], PackageCodePointer)
     assert repository_code_pointer_dict["hello_world_repository"].module == module_name
     assert (
-        repository_code_pointer_dict["hello_world_repository"].fn_name == "hello_world_repository"
+        repository_code_pointer_dict["hello_world_repository"].attribute == "hello_world_repository"
     )
 
 

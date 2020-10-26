@@ -545,6 +545,14 @@ def _schedule_tick_state(instance, stream, tick_data):
     "waiting to load them when the server is launched. Useful for surfacing errors when the server "
     "is managed directly from Dagit",
 )
+@click.option(
+    "--use-python-package/--no-use-python-package",
+    is_flag=True,
+    required=False,
+    default=True,
+    help="If --python-module is specified, whether to require that it be "
+    "an installed Python package.",
+)
 @python_origin_target_argument
 @click.option(
     "--ipc-output-file",
@@ -587,6 +595,7 @@ def grpc_command(
             working_directory=get_working_directory_from_kwargs(kwargs),
             module_name=kwargs["module_name"],
             python_file=kwargs["python_file"],
+            use_python_package=kwargs["use_python_package"],
         )
 
     server = DagsterGrpcServer(
