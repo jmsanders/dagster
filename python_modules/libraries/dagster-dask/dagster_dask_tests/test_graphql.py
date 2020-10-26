@@ -7,7 +7,7 @@ from graphql.execution.executors.sync import SyncExecutor
 
 from dagster.cli.workspace import Workspace
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import RepositoryLocationHandle
+from dagster.core.host_representation import InProcessRepositoryLocationOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path
 
@@ -20,9 +20,7 @@ def test_execute_hammer_through_dagit():
     instance = DagsterInstance.local_temp()
 
     context = DagsterGraphQLContext(
-        workspace=Workspace(
-            [RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)]
-        ),
+        workspace=Workspace([InProcessRepositoryLocationOrigin(recon_repo.pointer)]),
         instance=instance,
     )
 
