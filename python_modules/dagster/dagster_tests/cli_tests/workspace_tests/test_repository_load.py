@@ -148,7 +148,7 @@ def test_missing_location_name_multi_location():
 
     assert (
         """Must provide --location as there are more than one locations available. """
-        """Options are: ['loaded_from_file', 'loaded_from_module']"""
+        """Options are: ['loaded_from_file', 'loaded_from_module', 'loaded_from_package']"""
     ) in result.stdout
 
 
