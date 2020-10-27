@@ -6,7 +6,7 @@ from graphql import graphql
 
 from dagster import check
 from dagster.cli.workspace import Workspace
-from dagster.core.code_pointer import CodePointer
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
     PythonEnvRepositoryLocationOrigin,
@@ -57,7 +57,7 @@ def define_in_process_context(python_file, fn_name, instance):
         workspace=Workspace(
             [
                 InProcessRepositoryLocationOrigin(
-                    CodePointer.from_python_file(python_file, fn_name, None)
+                    ReconstructableRepository.for_file(python_file, fn_name)
                 )
             ]
         ),
