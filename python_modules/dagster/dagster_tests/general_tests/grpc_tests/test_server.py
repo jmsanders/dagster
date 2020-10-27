@@ -19,7 +19,12 @@ def test_streaming_terminate():
         )
         stream_events_result_thread.daemon = True
         stream_events_result_thread.start()
+
+        start = time.time()
         while not streaming_results:
+            if time.time() - start > 15:
+                raise Exception("Timed out waiting for streaming results")
+
             time.sleep(0.001)
 
         try:
@@ -28,7 +33,9 @@ def test_streaming_terminate():
             # shutting down sometimes happens so fast that it terminates the calling RPC
             pass
 
-        stream_events_result_thread.join()
+        stream_events_result_thread.join(timeout=30)
+
+        assert not stream_events_result_thread.is_alive()
         assert len(streaming_results) == 100000
 
         api_client._server_process.wait()  # pylint: disable=protected-access
