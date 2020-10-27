@@ -47,7 +47,9 @@ def _assign_loadable_target_origin_name(loadable_target_origin):
 
 
 class RepositoryLocationOrigin(six.with_metaclass(ABCMeta)):
-    pass
+    @property
+    def is_reload_supported(self):
+        return True
 
 
 @whitelist_for_serdes
@@ -62,6 +64,10 @@ class InProcessRepositoryLocationOrigin(
     @property
     def location_name(self):
         return IN_PROCESS_NAME
+
+    @property
+    def is_reload_supported(self):
+        return False
 
 
 @whitelist_for_serdes

@@ -1086,7 +1086,7 @@ type ReloadNotSupported implements Error {
   message: String!
 }
 
-union ReloadRepositoryLocationMutationResult = RepositoryLocation | ReloadNotSupported | RepositoryLocationNotFound
+union ReloadRepositoryLocationMutationResult = RepositoryLocation | ReloadNotSupported | RepositoryLocationNotFound | PythonError
 
 union RepositoriesOrError = RepositoryConnection | PythonError
 
