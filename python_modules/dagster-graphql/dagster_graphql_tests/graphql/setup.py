@@ -4,6 +4,7 @@ import logging
 import os
 import time
 from collections import OrderedDict
+from contextlib import contextmanager
 from copy import deepcopy
 
 from dagster_graphql.test.utils import (
@@ -58,10 +59,10 @@ from dagster.core.definitions.decorators import job
 from dagster.core.definitions.partition import last_empty_partition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
-from dagster.core.host_representation.handle import python_user_process_api_from_instance
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import today_at_midnight
+from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
 
 
@@ -89,9 +90,11 @@ PoorMansDataFrame = PythonObjectDagsterType(
 )
 
 
+@contextmanager
 def define_test_out_of_process_context(instance):
     check.inst_param(instance, "instance", DagsterInstance)
-    return define_out_of_process_context(__file__, main_repo_name(), instance)
+    with define_out_of_process_context(__file__, main_repo_name(), instance) as context:
+        yield context
 
 
 def define_test_in_process_context(instance):
@@ -103,14 +106,13 @@ def create_main_recon_repo():
     return ReconstructableRepository.for_file(__file__, main_repo_name())
 
 
-def get_main_external_repo(instance):
+def get_main_external_repo():
     return RepositoryLocation.from_handle(
         RepositoryLocationHandle.create_from_repository_location_origin(
             location_origin_from_python_file(
                 python_file=file_relative_path(__file__, "setup.py"),
                 attribute=main_repo_name(),
                 working_directory=None,
-                user_process_api=python_user_process_api_from_instance(instance),
                 location_name=main_repo_location_name(),
             )
         )
@@ -1026,7 +1028,9 @@ def chained_failure_pipeline():
 
     @lambda_solid
     def conditionally_fail(_):
-        if os.environ.get("TEST_SOLID_SHOULD_FAIL"):
+        if os.path.isfile(
+            os.path.join(get_system_temp_directory(), "chained_failure_pipeline_conditionally_fail")
+        ):
             raise Exception("blah")
 
         return "hello"

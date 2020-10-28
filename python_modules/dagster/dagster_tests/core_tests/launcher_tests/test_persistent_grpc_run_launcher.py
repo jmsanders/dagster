@@ -1,3 +1,4 @@
+import sys
 import time
 
 import pytest
@@ -51,6 +52,7 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
         run_id = pipeline_run.run_id
 
         loadable_target_origin = LoadableTargetOrigin(
+            executable_path=sys.executable,
             attribute="nope",
             python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
         )
@@ -103,6 +105,7 @@ def test_terminate_after_shutdown():
         repository_location_handle = RepositoryLocationHandle.create_from_repository_location_origin(
             ManagedGrpcPythonEnvRepositoryLocationOrigin(
                 loadable_target_origin=LoadableTargetOrigin(
+                    executable_path=sys.executable,
                     attribute="nope",
                     python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
                 ),
@@ -150,6 +153,7 @@ def test_terminate_after_shutdown():
 def test_server_down():
     with grpc_instance() as instance:
         loadable_target_origin = LoadableTargetOrigin(
+            executable_path=sys.executable,
             attribute="nope",
             python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
         )

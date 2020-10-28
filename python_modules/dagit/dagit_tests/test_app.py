@@ -9,7 +9,6 @@ from dagit.cli import host_dagit_ui_with_workspace, ui
 
 from dagster import seven
 from dagster.cli.workspace.load import load_workspace_from_yaml_paths
-from dagster.core.host_representation.handle import UserProcessApi
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster.core.test_utils import environ
@@ -17,36 +16,26 @@ from dagster.seven import mock
 from dagster.utils import file_relative_path
 
 
-@pytest.mark.parametrize(
-    "python_user_process_api", [UserProcessApi.CLI, UserProcessApi.GRPC],
-)
-def test_create_app_with_workspace(python_user_process_api):
+def test_create_app_with_workspace():
     with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")], python_user_process_api,
+        [file_relative_path(__file__, "./workspace.yaml")],
     ) as workspace:
         assert create_app_from_workspace(workspace, DagsterInstance.ephemeral())
 
 
-@pytest.mark.parametrize(
-    "python_user_process_api", [UserProcessApi.CLI, UserProcessApi.GRPC],
-)
-def test_create_app_with_multiple_workspace_files(python_user_process_api):
+def test_create_app_with_multiple_workspace_files():
     with load_workspace_from_yaml_paths(
         [
             file_relative_path(__file__, "./workspace.yaml"),
             file_relative_path(__file__, "./override.yaml"),
         ],
-        python_user_process_api,
     ) as workspace:
         assert create_app_from_workspace(workspace, DagsterInstance.ephemeral())
 
 
-@pytest.mark.parametrize(
-    "python_user_process_api", [UserProcessApi.CLI, UserProcessApi.GRPC],
-)
-def test_create_app_with_workspace_and_scheduler(python_user_process_api):
+def test_create_app_with_workspace_and_scheduler():
     with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")], python_user_process_api
+        [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace:
         with seven.TemporaryDirectory() as temp_dir:
             instance = DagsterInstance.local_temp(
@@ -66,7 +55,7 @@ def test_notebook_view():
     notebook_path = file_relative_path(__file__, "render_uuid_notebook.ipynb")
 
     with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")], UserProcessApi.CLI
+        [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace:
         with create_app_from_workspace(
             workspace, DagsterInstance.ephemeral(),
@@ -80,7 +69,7 @@ def test_notebook_view():
 
 def test_index_view():
     with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")], UserProcessApi.CLI
+        [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace:
         with create_app_from_workspace(
             workspace, DagsterInstance.ephemeral(),
@@ -93,7 +82,7 @@ def test_index_view():
 
 def test_index_view_at_path_prefix():
     with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")], UserProcessApi.CLI
+        [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace:
         with create_app_from_workspace(
             workspace, DagsterInstance.ephemeral(), "/dagster-path"
@@ -111,7 +100,7 @@ def test_index_view_at_path_prefix():
 
 def test_graphql_view():
     with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")], UserProcessApi.CLI
+        [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace:
         with create_app_from_workspace(
             workspace, DagsterInstance.ephemeral(),
@@ -122,7 +111,7 @@ def test_graphql_view():
 
 def test_graphql_view_at_path_prefix():
     with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "./workspace.yaml")], UserProcessApi.CLI
+        [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace:
         with create_app_from_workspace(
             workspace, DagsterInstance.ephemeral(), "/dagster-path"
@@ -131,26 +120,20 @@ def test_graphql_view_at_path_prefix():
             assert b"Must provide query string" in res.data
 
 
-@pytest.mark.parametrize(
-    "python_user_process_api", [UserProcessApi.CLI, UserProcessApi.GRPC],
-)
-def test_successful_host_dagit_ui_from_workspace(python_user_process_api):
+def test_successful_host_dagit_ui_from_workspace():
     with mock.patch("gevent.pywsgi.WSGIServer"), seven.TemporaryDirectory() as temp_dir:
 
         instance = DagsterInstance.get(temp_dir)
 
         with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./workspace.yaml")], python_user_process_api,
+            [file_relative_path(__file__, "./workspace.yaml")]
         ) as workspace:
             host_dagit_ui_with_workspace(
                 instance=instance, workspace=workspace, host=None, port=2343, path_prefix=""
             )
 
 
-@pytest.mark.parametrize(
-    "python_user_process_api", [UserProcessApi.CLI, UserProcessApi.GRPC],
-)
-def test_successful_host_dagit_ui_from_multiple_workspace_files(python_user_process_api):
+def test_successful_host_dagit_ui_from_multiple_workspace_files():
     with mock.patch("gevent.pywsgi.WSGIServer"), seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.get(temp_dir)
 
@@ -159,7 +142,6 @@ def test_successful_host_dagit_ui_from_multiple_workspace_files(python_user_proc
                 file_relative_path(__file__, "./workspace.yaml"),
                 file_relative_path(__file__, "./override.yaml"),
             ],
-            python_user_process_api,
         ) as workspace:
             host_dagit_ui_with_workspace(
                 instance=instance, workspace=workspace, host=None, port=2343, path_prefix=""
@@ -170,7 +152,7 @@ def test_successful_host_dagit_ui_from_legacy_repository():
     with mock.patch("gevent.pywsgi.WSGIServer"), seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.get(temp_dir)
         with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./workspace.yaml")], UserProcessApi.CLI,
+            [file_relative_path(__file__, "./workspace.yaml")]
         ) as workspace:
             host_dagit_ui_with_workspace(
                 instance=instance, workspace=workspace, host=None, port=2343, path_prefix=""
@@ -200,7 +182,7 @@ def test_unknown_error():
     ), seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.get(temp_dir)
         with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./workspace.yaml")], UserProcessApi.CLI,
+            [file_relative_path(__file__, "./workspace.yaml")]
         ) as workspace:
             with pytest.raises(AnException):
                 host_dagit_ui_with_workspace(
@@ -217,7 +199,7 @@ def test_port_collision():
     ), seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.get(temp_dir)
         with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./workspace.yaml")], UserProcessApi.CLI,
+            [file_relative_path(__file__, "./workspace.yaml")]
         ) as workspace:
             with pytest.raises(Exception) as exc_info:
                 host_dagit_ui_with_workspace(
@@ -237,7 +219,7 @@ def test_invalid_path_prefix():
         instance = DagsterInstance.get(temp_dir)
 
         with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./workspace.yaml")], UserProcessApi.CLI,
+            [file_relative_path(__file__, "./workspace.yaml")]
         ) as workspace:
             with pytest.raises(Exception) as exc_info:
                 host_dagit_ui_with_workspace(
@@ -267,7 +249,7 @@ def test_valid_path_prefix():
         instance = DagsterInstance.get(temp_dir)
 
         with load_workspace_from_yaml_paths(
-            [file_relative_path(__file__, "./workspace.yaml")], UserProcessApi.CLI,
+            [file_relative_path(__file__, "./workspace.yaml")]
         ) as workspace:
             host_dagit_ui_with_workspace(
                 instance=instance,

@@ -10,7 +10,6 @@ from dagster.cli.workspace.cli_target import (
     pipeline_target_argument,
 )
 from dagster.core.host_representation import ExternalPipeline
-from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path
 
 WINDOWS_PY36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
@@ -22,9 +21,7 @@ def load_pipeline_via_cli_runner(cli_args):
     @click.command(name="test_pipeline_command")
     @pipeline_target_argument
     def command(**kwargs):
-        with get_external_pipeline_from_kwargs(
-            kwargs, DagsterInstance.ephemeral()
-        ) as external_pipeline:
+        with get_external_pipeline_from_kwargs(kwargs) as external_pipeline:
             capture_result["external_pipeline"] = external_pipeline
 
     runner = CliRunner()

@@ -13,7 +13,6 @@ from dagster.core.host_representation import (
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    PythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -272,26 +271,6 @@ class EnvironmentManagers:
         return MarkedManager(_mgr_fn, [Marks.hosted_user_process_env])
 
     @staticmethod
-    def out_of_process():
-        @contextmanager
-        def _mgr_fn(recon_repo):
-            """Goes out of process but same process as host process"""
-            check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-
-            # this is "ok" because we know the test host process containers the user code
-            loadable_target_origin = recon_repo.get_origin().loadable_target_origin
-            with Workspace(
-                [
-                    PythonEnvRepositoryLocationOrigin(
-                        loadable_target_origin=loadable_target_origin, location_name="test",
-                    )
-                ]
-            ) as workspace:
-                yield workspace
-
-        return MarkedManager(_mgr_fn, [Marks.out_of_process_env])
-
-    @staticmethod
     def managed_grpc():
         @contextmanager
         def _mgr_fn(recon_repo):
@@ -382,7 +361,6 @@ class Marks:
 
     # Repository Location marks
     hosted_user_process_env = pytest.mark.hosted_user_process_env
-    out_of_process_env = pytest.mark.out_of_process_env
     multi_location = pytest.mark.multi_location
     managed_grpc_env = pytest.mark.managed_grpc_env
     deployed_grpc_env = pytest.mark.deployed_grpc_env
@@ -472,15 +450,15 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def in_memory_instance_out_of_process_env():
+    def in_memory_instance_managed_grpc_env():
         """
         Good for tests with read-only metadata queries. Does not work
         if you have to go through the run launcher.
         """
         return GraphQLContextVariant(
             InstanceManagers.in_memory_instance(),
-            EnvironmentManagers.out_of_process(),
-            test_id="in_memory_instance_out_of_process_env",
+            EnvironmentManagers.managed_grpc(),
+            test_id="in_memory_instance_managed_grpc_env",
         )
 
     @staticmethod
@@ -497,14 +475,6 @@ class GraphQLContextVariant:
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
             EnvironmentManagers.user_code_in_host_process(),
             test_id="sqlite_with_default_run_launcher_in_process_env",
-        )
-
-    @staticmethod
-    def sqlite_with_default_run_launcher_out_of_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.sqlite_instance_with_default_run_launcher(),
-            EnvironmentManagers.out_of_process(),
-            test_id="sqlite_with_default_run_launcher_out_of_process_env",
         )
 
     @staticmethod
@@ -540,14 +510,6 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def postgres_with_default_run_launcher_out_of_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.postgres_instance_with_default_run_launcher(),
-            EnvironmentManagers.out_of_process(),
-            test_id="postgres_with_default_run_launcher_out_of_process_env",
-        )
-
-    @staticmethod
     def postgres_with_default_run_launcher_managed_grpc_env():
         return GraphQLContextVariant(
             InstanceManagers.postgres_instance_with_default_run_launcher(),
@@ -569,14 +531,6 @@ class GraphQLContextVariant:
             InstanceManagers.readonly_sqlite_instance(),
             EnvironmentManagers.user_code_in_host_process(),
             test_id="readonly_sqlite_instance_in_process_env",
-        )
-
-    @staticmethod
-    def readonly_sqlite_instance_out_of_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.readonly_sqlite_instance(),
-            EnvironmentManagers.out_of_process(),
-            test_id="readonly_sqlite_instance_out_of_process_env",
         )
 
     @staticmethod
@@ -612,14 +566,6 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def readonly_postgres_instance_out_of_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.readonly_postgres_instance(),
-            EnvironmentManagers.out_of_process(),
-            test_id="readonly_postgres_instance_out_of_process_env",
-        )
-
-    @staticmethod
     def readonly_postgres_instance_multi_location():
         return GraphQLContextVariant(
             InstanceManagers.readonly_postgres_instance(),
@@ -641,14 +587,6 @@ class GraphQLContextVariant:
             InstanceManagers.readonly_in_memory_instance(),
             EnvironmentManagers.user_code_in_host_process(),
             test_id="readonly_in_memory_instance_in_process_env",
-        )
-
-    @staticmethod
-    def readonly_in_memory_instance_out_of_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.readonly_in_memory_instance(),
-            EnvironmentManagers.out_of_process(),
-            test_id="readonly_in_memory_instance_out_of_process_env",
         )
 
     @staticmethod
@@ -684,28 +622,23 @@ class GraphQLContextVariant:
         """
         return [
             GraphQLContextVariant.in_memory_instance_in_process_env(),
-            GraphQLContextVariant.in_memory_instance_out_of_process_env(),
+            GraphQLContextVariant.in_memory_instance_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_sync_run_launcher_in_process_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_in_process_env(),
-            GraphQLContextVariant.sqlite_with_default_run_launcher_out_of_process_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(),
             GraphQLContextVariant.postgres_with_sync_run_launcher_in_process_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_in_process_env(),
-            GraphQLContextVariant.postgres_with_default_run_launcher_out_of_process_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(),
             GraphQLContextVariant.readonly_in_memory_instance_in_process_env(),
-            GraphQLContextVariant.readonly_in_memory_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_multi_location(),
             GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env(),
             GraphQLContextVariant.readonly_sqlite_instance_in_process_env(),
-            GraphQLContextVariant.readonly_sqlite_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_multi_location(),
             GraphQLContextVariant.readonly_sqlite_instance_managed_grpc_env(),
             GraphQLContextVariant.readonly_sqlite_instance_deployed_grpc_env(),
             GraphQLContextVariant.readonly_postgres_instance_in_process_env(),
-            GraphQLContextVariant.readonly_postgres_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_postgres_instance_multi_location(),
             GraphQLContextVariant.readonly_postgres_instance_managed_grpc_env(),
             GraphQLContextVariant.asset_aware_sqlite_instance_in_process_env(),
@@ -721,12 +654,8 @@ class GraphQLContextVariant:
     @staticmethod
     def all_out_of_process_executing_variants():
         return [
-            GraphQLContextVariant.sqlite_with_default_run_launcher_in_process_env(),
-            GraphQLContextVariant.sqlite_with_default_run_launcher_out_of_process_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.sqlite_with_default_run_launcher_deployed_grpc_env(),
-            GraphQLContextVariant.postgres_with_default_run_launcher_in_process_env(),
-            GraphQLContextVariant.postgres_with_default_run_launcher_out_of_process_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
             GraphQLContextVariant.postgres_with_default_run_launcher_deployed_grpc_env(),
         ]

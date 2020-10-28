@@ -20,7 +20,7 @@ def no_print(_):
 
 @pytest.mark.parametrize("gen_pipeline_args", launch_command_contexts())
 def test_print_command_verbose(gen_pipeline_args):
-    with gen_pipeline_args as (cli_args, uses_legacy_repository_yaml_format, instance):
+    with gen_pipeline_args as (cli_args, uses_legacy_repository_yaml_format, _instance):
         if uses_legacy_repository_yaml_format:
             with pytest.warns(
                 UserWarning,
@@ -28,18 +28,14 @@ def test_print_command_verbose(gen_pipeline_args):
                     "You are using the legacy repository yaml format. Please update your file "
                 ),
             ):
-                execute_print_command(
-                    verbose=True, cli_args=cli_args, print_fn=no_print, instance=instance
-                )
+                execute_print_command(verbose=True, cli_args=cli_args, print_fn=no_print)
         else:
-            execute_print_command(
-                verbose=True, cli_args=cli_args, print_fn=no_print, instance=instance
-            )
+            execute_print_command(verbose=True, cli_args=cli_args, print_fn=no_print)
 
 
 @pytest.mark.parametrize("gen_pipeline_args", launch_command_contexts())
 def test_print_command(gen_pipeline_args):
-    with gen_pipeline_args as (cli_args, uses_legacy_repository_yaml_format, instance):
+    with gen_pipeline_args as (cli_args, uses_legacy_repository_yaml_format, _instance):
         if uses_legacy_repository_yaml_format:
             with pytest.warns(
                 UserWarning,
@@ -47,13 +43,9 @@ def test_print_command(gen_pipeline_args):
                     "You are using the legacy repository yaml format. Please update your file "
                 ),
             ):
-                execute_print_command(
-                    verbose=False, cli_args=cli_args, print_fn=no_print, instance=instance
-                )
+                execute_print_command(verbose=False, cli_args=cli_args, print_fn=no_print)
         else:
-            execute_print_command(
-                verbose=False, cli_args=cli_args, print_fn=no_print, instance=instance
-            )
+            execute_print_command(verbose=False, cli_args=cli_args, print_fn=no_print)
 
 
 @pytest.mark.parametrize("pipeline_cli_args", valid_external_pipeline_target_cli_args_no_preset())

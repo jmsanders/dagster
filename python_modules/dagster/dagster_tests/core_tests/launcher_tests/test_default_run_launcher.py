@@ -11,13 +11,9 @@ from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation import (
     GrpcServerRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    PythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.host_representation.handle import RepositoryLocationHandle
-from dagster.core.host_representation.repository_location import (
-    GrpcServerRepositoryLocation,
-    RepositoryLocation,
-)
+from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
     environ,
@@ -106,7 +102,9 @@ def nope():
 @contextmanager
 def get_external_pipeline_from_grpc_server_repository(pipeline_name):
     loadable_target_origin = LoadableTargetOrigin(
-        attribute="nope", python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+        executable_path=sys.executable,
+        attribute="nope",
+        python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
     )
     server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
 
@@ -135,6 +133,7 @@ def get_external_pipeline_from_managed_grpc_python_env_repository(pipeline_name)
     repository_location_handle = RepositoryLocationHandle.create_from_repository_location_origin(
         ManagedGrpcPythonEnvRepositoryLocationOrigin(
             loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable,
                 attribute="nope",
                 python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
             ),
@@ -146,26 +145,6 @@ def get_external_pipeline_from_managed_grpc_python_env_repository(pipeline_name)
         yield repository_location.get_repository("nope").get_full_external_pipeline(pipeline_name)
     finally:
         repository_location_handle.cleanup()
-
-
-@contextmanager
-def get_external_pipeline_from_python_location(pipeline_name):
-    repository_location_handle = RepositoryLocationHandle.create_from_repository_location_origin(
-        PythonEnvRepositoryLocationOrigin(
-            loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable,
-                attribute="nope",
-                python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
-            ),
-            location_name="nope",
-        )
-    )
-
-    yield (
-        RepositoryLocation.from_handle(repository_location_handle)
-        .get_repository("nope")
-        .get_full_external_pipeline(pipeline_name)
-    )
 
 
 def run_configs():
@@ -199,7 +178,6 @@ def _check_event_log(event_log, expected_type_and_message):
     [
         get_external_pipeline_from_grpc_server_repository,
         get_external_pipeline_from_managed_grpc_python_env_repository,
-        get_external_pipeline_from_python_location,
     ],
 )
 @pytest.mark.parametrize(
@@ -279,7 +257,6 @@ def test_invalid_instance_run(get_external_pipeline):
     [
         get_external_pipeline_from_grpc_server_repository,
         get_external_pipeline_from_managed_grpc_python_env_repository,
-        get_external_pipeline_from_python_location,
     ],
 )
 @pytest.mark.parametrize(
@@ -328,7 +305,6 @@ def test_crashy_run(get_external_pipeline, run_config):  # pylint: disable=redef
     [
         get_external_pipeline_from_grpc_server_repository,
         get_external_pipeline_from_managed_grpc_python_env_repository,
-        get_external_pipeline_from_python_location,
     ],
 )
 @pytest.mark.parametrize(
@@ -431,7 +407,6 @@ def _message_exists(event_records, message_text):
     [
         get_external_pipeline_from_grpc_server_repository,
         get_external_pipeline_from_managed_grpc_python_env_repository,
-        get_external_pipeline_from_python_location,
     ],
 )
 @pytest.mark.parametrize(
@@ -467,7 +442,6 @@ def test_single_solid_selection_execution(
     [
         get_external_pipeline_from_grpc_server_repository,
         get_external_pipeline_from_managed_grpc_python_env_repository,
-        get_external_pipeline_from_python_location,
     ],
 )
 @pytest.mark.parametrize(
@@ -508,7 +482,6 @@ def test_multi_solid_selection_execution(
     [
         get_external_pipeline_from_grpc_server_repository,
         get_external_pipeline_from_managed_grpc_python_env_repository,
-        get_external_pipeline_from_python_location,
     ],
 )
 @pytest.mark.parametrize(

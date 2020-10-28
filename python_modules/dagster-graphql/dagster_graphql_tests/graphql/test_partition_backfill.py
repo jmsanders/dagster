@@ -1,3 +1,5 @@
+import os
+
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
@@ -5,7 +7,7 @@ from dagster_graphql.test.utils import (
     infer_repository_selector,
 )
 
-from dagster.core.test_utils import environ
+from dagster.seven import get_system_temp_directory
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -100,8 +102,7 @@ class TestPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 class TestLaunchBackfillFromFailure(
     make_graphql_context_test_suite(
         context_variants=[
-            GraphQLContextVariant.sqlite_with_default_run_launcher_in_process_env(),
-            GraphQLContextVariant.sqlite_with_default_run_launcher_out_of_process_env(),
+            GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
         ]
     )
 ):
@@ -113,17 +114,25 @@ class TestLaunchBackfillFromFailure(
         }
 
         # trigger failure in the conditionally_fail solid
-        with environ({"TEST_SOLID_SHOULD_FAIL": "YES"}):
-            result = execute_dagster_graphql_and_finish_runs(
-                graphql_context,
-                LAUNCH_PARTITION_BACKFILL_MUTATION,
-                variables={
-                    "backfillParams": {
-                        "selector": partition_set_selector,
-                        "partitionNames": ["2", "3"],
-                    }
-                },
-            )
+
+        output_file = os.path.join(
+            get_system_temp_directory(), "chained_failure_pipeline_conditionally_fail"
+        )
+        try:
+            with open(output_file, "w"):
+                result = execute_dagster_graphql_and_finish_runs(
+                    graphql_context,
+                    LAUNCH_PARTITION_BACKFILL_MUTATION,
+                    variables={
+                        "backfillParams": {
+                            "selector": partition_set_selector,
+                            "partitionNames": ["2", "3"],
+                        }
+                    },
+                )
+        finally:
+            os.remove(output_file)
+
         assert not result.errors
         assert result.data
         assert result.data["launchPartitionBackfill"]["__typename"] == "PartitionBackfillSuccess"
@@ -136,7 +145,7 @@ class TestLaunchBackfillFromFailure(
             assert step_did_fail(logs, "conditionally_fail.compute")
             assert step_did_not_run(logs, "after_failure.compute")
 
-        # re-execute from failure (without the failure environment variable)
+        # re-execute from failure (without the failure file)
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             LAUNCH_PARTITION_BACKFILL_MUTATION,
