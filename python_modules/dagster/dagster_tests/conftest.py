@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import time
 from contextlib import contextmanager
 
@@ -10,12 +11,16 @@ from dagster_test.dagster_core_docker_buildkite import (
     test_project_docker_image,
 )
 
-from dagster import check
+from dagster import check, seven
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.utils import file_relative_path
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 HARDCODED_PORT = 8090
+
+# Suggested workaround for https://bugs.python.org/issue37380
+if seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6:
+    subprocess._cleanup = lambda: None  # pylint: disable=protected-access
 
 
 @pytest.fixture(scope="session")
