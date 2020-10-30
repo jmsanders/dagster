@@ -6,12 +6,10 @@ from difflib import SequenceMatcher
 import mock
 import pytest
 import responses
-import yaml
 from click.testing import CliRunner
 from dagster import seven
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
-from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import (
     DAGSTER_TELEMETRY_URL,
     UPDATE_REPO_STATS,
@@ -19,7 +17,7 @@ from dagster.core.telemetry import (
     hash_name,
     upload_logs,
 )
-from dagster.core.test_utils import environ, instance_for_test
+from dagster.core.test_utils import environ, instance_for_test, instance_for_test_tempdir
 from dagster.utils import file_relative_path, pushd, script_relative_path
 
 EXPECTED_KEYS = set(
@@ -44,7 +42,7 @@ def path_to_file(path):
 
 
 def test_dagster_telemetry_enabled(caplog):
-    with instance_for_test(enable_telemetry=True):
+    with instance_for_test(overrides={"telemetry": {"enabled": True}}):
         runner = CliRunner()
         with pushd(path_to_file("")):
             pipeline_attribute = "foo_pipeline"
@@ -68,7 +66,7 @@ def test_dagster_telemetry_enabled(caplog):
 
 
 def test_dagster_telemetry_disabled(caplog):
-    with instance_for_test(enable_telemetry=False):
+    with instance_for_test(overrides={"telemetry": {"enabled": False}}):
         runner = CliRunner()
         with pushd(path_to_file("")):
             pipeline_name = "foo_pipeline"
@@ -84,11 +82,7 @@ def test_dagster_telemetry_disabled(caplog):
 
 def test_dagster_telemetry_unset(caplog):
     with seven.TemporaryDirectory() as temp_dir:
-        with environ({"DAGSTER_HOME": temp_dir}):
-            with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
-                yaml.dump({}, fd, default_flow_style=False)
-
-            DagsterInstance.local_temp(temp_dir)
+        with instance_for_test_tempdir(temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
                 pipeline_attribute = "foo_pipeline"
@@ -114,11 +108,7 @@ def test_dagster_telemetry_unset(caplog):
 
 def test_repo_stats(caplog):
     with seven.TemporaryDirectory() as temp_dir:
-        with environ({"DAGSTER_HOME": temp_dir}):
-            with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
-                yaml.dump({}, fd, default_flow_style=False)
-
-            DagsterInstance.local_temp(temp_dir)
+        with instance_for_test_tempdir(temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
                 pipeline_name = "multi_mode_with_resources"
@@ -155,9 +145,6 @@ def test_repo_stats(caplog):
 # Note that both environment must be set together. Otherwise, if env={"BUILDKITE": None} ran in the
 # azure pipeline, then this test would fail, because TF_BUILD would be set implicitly, resulting in
 # no logs being uploaded. The same applies in the reverse way, if only TF_BUILD is set to None.
-@pytest.mark.skipif(
-    os.name == "nt", reason="TemporaryDirectory disabled for win because of event.log contention"
-)
 @pytest.mark.parametrize("env", [{"BUILDKITE": None, "TF_BUILD": None}])
 @responses.activate
 def test_dagster_telemetry_upload(env):
@@ -166,7 +153,7 @@ def test_dagster_telemetry_upload(env):
         logger.removeHandler(handler)
 
     with environ(env):
-        with instance_for_test(enable_telemetry=True):
+        with instance_for_test():
             runner = CliRunner()
             with pushd(path_to_file("")):
                 pipeline_attribute = "foo_pipeline"
@@ -191,7 +178,7 @@ def test_dagster_telemetry_upload(env):
 @responses.activate
 def test_dagster_telemetry_no_test_env_upload(env):
     with environ(env):
-        with instance_for_test(enable_telemetry=True):
+        with instance_for_test():
             runner = CliRunner()
             with pushd(path_to_file("")):
                 pipeline_attribute = "foo_pipeline"

@@ -265,6 +265,18 @@ def _get_telemetry_logger():
     return logger
 
 
+# For use in test teardown
+def cleanup_telemetry_logger():
+    logger = logging.getLogger("dagster_telemetry_logger")
+    if len(logger.handlers) == 0:
+        return
+
+    check.invariant(len(logger.handlers) == 1)
+    handler = next(iter(logger.handlers))
+    handler.close()
+    logger.removeHandler(handler)
+
+
 def write_telemetry_log_line(log_line):
     logger = _get_telemetry_logger()
     logger.info(json.dumps(log_line))
