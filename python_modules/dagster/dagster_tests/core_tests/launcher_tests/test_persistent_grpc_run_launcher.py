@@ -78,51 +78,53 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
 
 
 def test_terminate_after_shutdown():
-    with instance_for_test() as instance:
-        with RepositoryLocationHandle.create_process_bound_grpc_server_location(
-            loadable_target_origin=LoadableTargetOrigin(
-                attribute="nope",
-                python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
-            ),
-            location_name="nope",
-        ) as repository_location_handle:
-            repository_location = GrpcServerRepositoryLocation(repository_location_handle)
+    for _trial in range(10):
+        print("TRIAL: " + str(_trial))
+        with instance_for_test() as instance:
+            with RepositoryLocationHandle.create_process_bound_grpc_server_location(
+                loadable_target_origin=LoadableTargetOrigin(
+                    attribute="nope",
+                    python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+                ),
+                location_name="nope",
+            ) as repository_location_handle:
+                repository_location = GrpcServerRepositoryLocation(repository_location_handle)
 
-            external_pipeline = repository_location.get_repository(
+                external_pipeline = repository_location.get_repository(
+                    "nope"
+                ).get_full_external_pipeline("sleepy_pipeline")
+
+                pipeline_run = instance.create_run_for_pipeline(
+                    pipeline_def=sleepy_pipeline, run_config=None
+                )
+
+                instance.launch_run(pipeline_run.run_id, external_pipeline)
+
+                poll_for_step_start(instance, pipeline_run.run_id)
+
+                # Leaving this context manager cleans up the repository location handle,
+                # which tells the server to shut down once executions finish
+
+            # Trying to start another run fails
+            doomed_to_fail_external_pipeline = repository_location.get_repository(
                 "nope"
-            ).get_full_external_pipeline("sleepy_pipeline")
-
-            pipeline_run = instance.create_run_for_pipeline(
-                pipeline_def=sleepy_pipeline, run_config=None
+            ).get_full_external_pipeline("math_diamond")
+            doomed_to_fail_pipeline_run = instance.create_run_for_pipeline(
+                pipeline_def=math_diamond, run_config=None
             )
 
-            instance.launch_run(pipeline_run.run_id, external_pipeline)
+            with pytest.raises(DagsterLaunchFailedError):
+                instance.launch_run(
+                    doomed_to_fail_pipeline_run.run_id, doomed_to_fail_external_pipeline
+                )
 
-            poll_for_step_start(instance, pipeline_run.run_id)
+            launcher = instance.run_launcher
 
-            # Leaving this context manager cleans up the repository location handle,
-            # which tells the server to shut down once executions finish
+            # Can terminate the run even after the shutdown event has been received
+            assert launcher.can_terminate(pipeline_run.run_id)
+            assert launcher.terminate(pipeline_run.run_id)
 
-        # Trying to start another run fails
-        doomed_to_fail_external_pipeline = repository_location.get_repository(
-            "nope"
-        ).get_full_external_pipeline("math_diamond")
-        doomed_to_fail_pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=math_diamond, run_config=None
-        )
-
-        with pytest.raises(DagsterLaunchFailedError):
-            instance.launch_run(
-                doomed_to_fail_pipeline_run.run_id, doomed_to_fail_external_pipeline
-            )
-
-        launcher = instance.run_launcher
-
-        # Can terminate the run even after the shutdown event has been received
-        assert launcher.can_terminate(pipeline_run.run_id)
-        assert launcher.terminate(pipeline_run.run_id)
-
-        # Server process now shuts down cleanly since there are no more executions
+            # Server process now shuts down cleanly since there are no more executions
 
 
 def test_server_down():

@@ -131,6 +131,7 @@ def get_external_pipeline_from_managed_grpc_python_env_repository(pipeline_name)
         ),
         location_name="nope",
     ) as repository_location_handle:
+        # Hi
         repository_location = GrpcServerRepositoryLocation(repository_location_handle)
         yield repository_location.get_repository("nope").get_full_external_pipeline(pipeline_name)
 
