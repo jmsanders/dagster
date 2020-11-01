@@ -124,18 +124,15 @@ def get_external_pipeline_from_grpc_server_repository(pipeline_name):
 
 @contextmanager
 def get_external_pipeline_from_managed_grpc_python_env_repository(pipeline_name):
-    repository_location_handle = RepositoryLocationHandle.create_process_bound_grpc_server_location(
+    with RepositoryLocationHandle.create_process_bound_grpc_server_location(
         loadable_target_origin=LoadableTargetOrigin(
             attribute="nope",
             python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
         ),
         location_name="nope",
-    )
-    repository_location = GrpcServerRepositoryLocation(repository_location_handle)
-    try:
+    ) as repository_location_handle:
+        repository_location = GrpcServerRepositoryLocation(repository_location_handle)
         yield repository_location.get_repository("nope").get_full_external_pipeline(pipeline_name)
-    finally:
-        repository_location_handle.cleanup()
 
 
 @contextmanager

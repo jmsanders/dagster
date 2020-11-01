@@ -30,16 +30,13 @@ def get_bar_repo_repository_location_handle(user_process_api=UserProcessApi.CLI)
 
 @contextmanager
 def get_bar_repo_grpc_repository_location_handle():
-    handle = RepositoryLocationHandle.create_process_bound_grpc_server_location(
+    with RepositoryLocationHandle.create_process_bound_grpc_server_location(
         loadable_target_origin=LoadableTargetOrigin(
             attribute="bar_repo", python_file=file_relative_path(__file__, "api_tests_repo.py"),
         ),
         location_name="bar_repo",
-    )
-    try:
+    ) as handle:
         yield handle
-    finally:
-        handle.cleanup()
 
 
 def get_bar_repo_handle():

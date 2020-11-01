@@ -82,17 +82,14 @@ def giant_repo():
 
 @contextmanager
 def get_giant_repo_grpc_repository_location_handle():
-    handle = RepositoryLocationHandle.create_process_bound_grpc_server_location(
+    with RepositoryLocationHandle.create_process_bound_grpc_server_location(
         loadable_target_origin=LoadableTargetOrigin(
             attribute="giant_repo",
             module_name="dagster_tests.api_tests.test_api_snapshot_repository",
         ),
         location_name="giant_repo_location",
-    )
-    try:
+    ) as handle:
         yield handle
-    finally:
-        handle.cleanup()
 
 
 def test_giant_external_repository():
