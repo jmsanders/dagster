@@ -84,6 +84,7 @@ def instance_for_test(overrides=None):
     with seven.TemporaryDirectory() as temp_dir:
         with instance_for_test_tempdir(temp_dir, overrides) as instance:
             yield instance
+    print("END OF INSTANCE FOR TEST")
 
 
 @contextmanager
