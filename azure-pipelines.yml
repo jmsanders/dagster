@@ -18,10 +18,6 @@ parameters:
 - name: py3_env_suffixes
   type: object
   default:
-    - api_tests
-    - cli_tests
-    - cli_command_cli_api_tests
-    - cli_command_grpc_tests
     - core_tests
 jobs:
   - job: "dagster"
@@ -29,11 +25,6 @@ jobs:
       vmImage: "vs2017-win2016"
     strategy:
       matrix:
-        ${{ each py_version in parameters.py2_versions }}:
-          ${{ each env_suffix in parameters.py2_env_suffixes }}:
-            ${{ replace(py_version, '.', '') }}-windows-${{ env_suffix }}:
-              TOXENV: "py${{ replace(py_version, '.', '') }}-windows-${{ env_suffix }}"
-              python.version: "${{ py_version }}"
         ${{ each py_version in parameters.py3_versions }}:
           ${{ each env_suffix in parameters.py3_env_suffixes }}:
             ${{ replace(py_version, '.', '') }}-windows-${{ env_suffix }}:

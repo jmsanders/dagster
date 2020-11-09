@@ -179,21 +179,23 @@ def test_step_retry_limit(environment):
 
 
 def test_retry_deferral():
-    with instance_for_test() as instance:
-        events = execute_plan(
-            create_execution_plan(define_retry_limit_pipeline()),
-            pipeline_run=PipelineRun(pipeline_name="retry_limits", run_id="42"),
-            retries=Retries(RetryMode.DEFERRED),
-            instance=instance,
-        )
-        events_by_type = defaultdict(list)
-        for ev in events:
-            events_by_type[ev.event_type].append(ev)
+    for trial in range(250):
+        print("TRIAL: " + str(trial))
+        with instance_for_test() as instance:
+            events = execute_plan(
+                create_execution_plan(define_retry_limit_pipeline()),
+                pipeline_run=PipelineRun(pipeline_name="retry_limits", run_id="42"),
+                retries=Retries(RetryMode.DEFERRED),
+                instance=instance,
+            )
+            events_by_type = defaultdict(list)
+            for ev in events:
+                events_by_type[ev.event_type].append(ev)
 
-        assert len(events_by_type[DagsterEventType.STEP_START]) == 2
-        assert len(events_by_type[DagsterEventType.STEP_UP_FOR_RETRY]) == 2
-        assert DagsterEventType.STEP_RESTARTED not in events
-        assert DagsterEventType.STEP_SUCCESS not in events
+            assert len(events_by_type[DagsterEventType.STEP_START]) == 2
+            assert len(events_by_type[DagsterEventType.STEP_UP_FOR_RETRY]) == 2
+            assert DagsterEventType.STEP_RESTARTED not in events
+            assert DagsterEventType.STEP_SUCCESS not in events
 
 
 DELAY = 2
