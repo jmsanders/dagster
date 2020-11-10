@@ -244,25 +244,27 @@ def test_separate_sub_dags():
 
 
 def test_ephemeral_event_log():
-    with instance_for_test(
-        overrides={
-            "event_log_storage": {
-                "module": "dagster.core.storage.event_log",
-                "class": "InMemoryEventLogStorage",
+    for trial in range(50):
+        print("TRIAL: " + str(trial))
+        with instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.core.storage.event_log",
+                    "class": "InMemoryEventLogStorage",
+                }
             }
-        }
-    ) as instance:
-        pipe = reconstructable(define_diamond_pipeline)
-        # override event log to in memory
+        ) as instance:
+            pipe = reconstructable(define_diamond_pipeline)
+            # override event log to in memory
 
-        result = execute_pipeline(
-            pipe,
-            run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
-            instance=instance,
-        )
-        assert result.success
+            result = execute_pipeline(
+                pipe,
+                run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+                instance=instance,
+            )
+            assert result.success
 
-        assert result.result_for_solid("adder").output_value() == 11
+            assert result.result_for_solid("adder").output_value() == 11
 
 
 @solid(

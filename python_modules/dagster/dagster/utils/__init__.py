@@ -366,7 +366,7 @@ def _replace_interrupt_signal(new_signal_handler):
 # `raise_interrupts_immediately` context during a period in which it's once again safe to raise
 # interrupts.
 @contextlib.contextmanager
-def delay_interrupts():
+def delay_interrupts(raise_afterwards=True):
     original_signal_handler = signal.getsignal(signal.SIGINT)
 
     def _new_signal_handler(_signo, _):
@@ -385,7 +385,8 @@ def delay_interrupts():
     finally:
         if signal_replaced:
             _replace_interrupt_signal(original_signal_handler)
-            raise_delayed_interrupts()
+            if raise_afterwards:
+                raise_delayed_interrupts()
 
 
 # Restores the default SIGINT handler behavior within this context. Typically this would be a no-op,

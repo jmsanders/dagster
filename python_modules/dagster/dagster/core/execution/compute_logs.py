@@ -19,7 +19,7 @@ WIN_PY36_COMPUTE_LOG_DISABLED_MSG = """\u001b[33mWARNING: Compute log capture is
 @contextmanager
 def redirect_to_file(stream, filepath):
     with open(filepath, "a+", buffering=1) as file_stream:
-        with redirect_stream(file_stream, stream):
+        with redirect_stream(to_stream=file_stream, from_stream=stream):
             yield
 
 
@@ -48,7 +48,7 @@ def warn_if_compute_logs_disabled():
 
 
 @contextmanager
-def redirect_stream(to_stream=os.devnull, from_stream=sys.stdout):
+def redirect_stream(to_stream, from_stream):
     # swap the file descriptors to capture system-level output in the process
     # From https://stackoverflow.com/questions/4675728/redirect-stdout-to-a-file-in-python/22434262#22434262
     from_fd = _fileno(from_stream)
@@ -95,12 +95,58 @@ def execute_windows_tail(path, stream):
         tail_process = open_ipc_subprocess(
             [sys.executable, poll_file, path, str(os.getpid())], stdout=stream
         )
+        sys.stderr.write(
+            str(time.time())
+            + " : "
+            + "OPENED TAIL PROCESS FOR "
+            + str(path)
+            + " , "
+            + str(poll_file)
+            + " , PID: "
+            + str(tail_process.pid)
+            + "\n"
+        )
         yield (tail_process.pid, None)
     finally:
+        sys.stderr.write(
+            str(time.time()) + " : " + "EXECUTION HAS FINISHED HOORAY! " + str(path) + "\n"
+        )
+
         if tail_process:
             time.sleep(2 * poll_compute_logs.POLLING_INTERVAL)
+
+            sys.stderr.write("INTERRUPTING! " + str(path) + "\n")
+
             interrupt_ipc_subprocess(tail_process)
-            wait_for_process(tail_process)
+
+            start_time = time.time()
+
+            sys.stderr.write(str(time.time()) + " : " + "POLLING! " + str(path) + "\n")
+
+            while tail_process.poll() is None:
+                import psutil  # pylint: disable=import-error
+
+                try:
+
+                    sys.stderr.write(
+                        str(time.time())
+                        + " : "
+                        + "PROCESS STATUS: "
+                        + repr(psutil.Process(tail_process.pid).status())
+                        + "\n"
+                    )
+
+                except psutil.NoSuchProcess:
+                    sys.stderr.write("PROCESS IS DEAD, THAT'S COOL TOO\n")
+
+                if time.time() - start_time > 30:
+                    raise Exception(str(time.time()) + " : " + "TIMED OUT WAITING FOR TAIL PROCESS")
+
+                time.sleep(1)
+                # Re-interrupt just in case the first one came through too early
+                interrupt_ipc_subprocess(tail_process)
+
+            wait_for_process(tail_process, timeout=120)
 
 
 @contextmanager

@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-from dagster.utils import delay_interrupts, raise_delayed_interrupts
+from dagster.utils import delay_interrupts, pop_delayed_interrupts
 
 POLLING_INTERVAL = 0.1
 
@@ -16,8 +16,14 @@ def current_process_is_orphaned(parent_pid):
 
         try:
             parent = psutil.Process(parent_pid)
-            return parent.status() != psutil.STATUS_RUNNING
+            status = parent.status()
+            if status != psutil.STATUS_RUNNING:
+                print("PARENT STATUS: " + repr(status) + "\n")
+                return True
+            else:
+                return False
         except psutil.NoSuchProcess:
+            print("NO SUCH PROCESS: " + repr(parent_pid) + "\n")
             return True
 
     else:
@@ -32,12 +38,15 @@ def tail_polling(filepath, stream=sys.stdout, parent_pid=None):
     """
     with open(filepath, "r") as file:
         for block in iter(lambda: file.read(1024), None):
-            raise_delayed_interrupts()
+            if pop_delayed_interrupts():
+                print(str(time.time()) + " : " + "GET AN INTERRUPT, QUITTING\n")
+                return
             if block:
                 print(block, end="", file=stream)  # pylint: disable=print-call
             else:
                 if parent_pid and current_process_is_orphaned(parent_pid):
-                    sys.exit()
+                    print(str(time.time()) + " : " + "CURRENT PROCESS IS ORPHANED, QUITTING\n")
+                    return
                 time.sleep(POLLING_INTERVAL)
 
 
@@ -48,9 +57,31 @@ def execute_polling(args):
     filepath = args[0]
     parent_pid = int(args[1])
 
+    print(
+        str(time.time())
+        + " : "
+        + "STARTING, MY PID: "
+        + str(os.getpid())
+        + ", ARGS: "
+        + repr(args)
+        + "\n"
+    )
+
     tail_polling(filepath, sys.stdout, parent_pid)
+
+    print("FINISHING, MY PID: " + str(os.getpid()) + ", ARGS: " + repr(args) + "\n")
 
 
 if __name__ == "__main__":
-    with delay_interrupts():
+
+    print(
+        str(time.time())
+        + " : "
+        + "HERE WE ARE AT THE BEGINNING OF POLL_COMPUTE_LOGS FOR "
+        + repr(sys.argv[1:])
+    )
+
+    with delay_interrupts(raise_afterwards=False):
         execute_polling(sys.argv[1:])
+
+    print(str(time.time()) + " : " + "ALL DONE GOODBYE\n")
