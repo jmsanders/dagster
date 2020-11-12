@@ -153,4 +153,5 @@ def execute_child_process_command(command):
         # TODO Figure out what to do about stderr/stdout
         raise ChildProcessCrashException(exit_code=process.exitcode)
 
+    print("JOIIIIIIIIIN")
     process.join()

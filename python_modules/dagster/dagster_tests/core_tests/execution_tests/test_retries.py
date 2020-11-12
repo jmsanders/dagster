@@ -150,32 +150,34 @@ def define_retry_limit_pipeline():
 
 @executors
 def test_step_retry_limit(environment):
-    with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(define_retry_limit_pipeline),
-            run_config=environment,
-            raise_on_error=False,
-            instance=instance,
-        )
-        assert not result.success
+    for trial in range(50):
+        print("TRIAL: " + str(trial))
+        with instance_for_test() as instance:
+            result = execute_pipeline(
+                reconstructable(define_retry_limit_pipeline),
+                run_config=environment,
+                raise_on_error=False,
+                instance=instance,
+            )
+            assert not result.success
 
-        events = defaultdict(list)
-        for ev in result.events_by_step_key["default_max.compute"]:
-            events[ev.event_type].append(ev)
+            events = defaultdict(list)
+            for ev in result.events_by_step_key["default_max.compute"]:
+                events[ev.event_type].append(ev)
 
-        assert len(events[DagsterEventType.STEP_START]) == 1
-        assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 1
-        assert len(events[DagsterEventType.STEP_RESTARTED]) == 1
-        assert len(events[DagsterEventType.STEP_FAILURE]) == 1
+            assert len(events[DagsterEventType.STEP_START]) == 1
+            assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 1
+            assert len(events[DagsterEventType.STEP_RESTARTED]) == 1
+            assert len(events[DagsterEventType.STEP_FAILURE]) == 1
 
-        events = defaultdict(list)
-        for ev in result.events_by_step_key["three_max.compute"]:
-            events[ev.event_type].append(ev)
+            events = defaultdict(list)
+            for ev in result.events_by_step_key["three_max.compute"]:
+                events[ev.event_type].append(ev)
 
-        assert len(events[DagsterEventType.STEP_START]) == 1
-        assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 3
-        assert len(events[DagsterEventType.STEP_RESTARTED]) == 3
-        assert len(events[DagsterEventType.STEP_FAILURE]) == 1
+            assert len(events[DagsterEventType.STEP_START]) == 1
+            assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 3
+            assert len(events[DagsterEventType.STEP_RESTARTED]) == 3
+            assert len(events[DagsterEventType.STEP_FAILURE]) == 1
 
 
 def test_retry_deferral():
