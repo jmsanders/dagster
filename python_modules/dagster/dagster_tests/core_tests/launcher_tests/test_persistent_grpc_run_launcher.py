@@ -3,6 +3,7 @@ import time
 
 import pytest
 from dagster import file_relative_path, seven
+from dagster.api.execute_run import sync_execute_run_grpc
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation import (
     GrpcServerRepositoryLocationOrigin,
@@ -115,6 +116,30 @@ def test_terminate_after_shutdown():
                 instance.launch_run(
                     doomed_to_fail_pipeline_run.run_id, doomed_to_fail_external_pipeline
                 )
+
+            another_doomed_to_fail_pipeline_run = instance.create_run_for_pipeline(
+                pipeline_def=math_diamond, run_config=None
+            )
+
+            failed_execute_run_events = sync_execute_run_grpc(
+                repository_location_handle.client,
+                instance.get_ref(),
+                doomed_to_fail_external_pipeline.get_external_origin(),
+                another_doomed_to_fail_pipeline_run,
+            )
+
+            assert any(
+                [
+                    "Tried to start a run on a server after telling it to shut down"
+                    in event.message
+                    for event in failed_execute_run_events
+                ]
+            )
+
+            assert (
+                instance.get_run_by_id(another_doomed_to_fail_pipeline_run.run_id).status
+                == PipelineRunStatus.FAILURE
+            )
 
             launcher = instance.run_launcher
 

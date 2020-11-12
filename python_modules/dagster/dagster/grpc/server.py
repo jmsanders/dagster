@@ -524,6 +524,7 @@ class DagsterApiServer(DagsterApiServicer):
                     )
                 )
             )
+            return
 
         try:
             execute_run_args = deserialize_json_to_dagster_namedtuple(
@@ -609,6 +610,8 @@ class DagsterApiServer(DagsterApiServicer):
                 del self._executions[run_id]
             if run_id in self._termination_events:
                 del self._termination_events[run_id]
+
+        execution_process.join(timeout=30)
 
     def ShutdownServer(self, request, _context):
         try:
