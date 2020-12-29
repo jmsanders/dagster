@@ -9,6 +9,14 @@ from moto import mock_ecs, mock_sts
 
 
 @pytest.fixture
+def mock_subnet():
+    with mock_ec2():
+        ec2 = boto3.client("ec2", region_name="us-east-2")
+        vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
+        subnet = ec2.create_subnet(Vpc=Vpc["Vpc"]["VpcId"], CidrBlock="10.0.0.0/24")
+        yield subnet["Subnet"]["SubnetId"]
+
+@pytest.fixture
 def mock_ecs_client():
     with mock_ecs():
         yield boto3.client("ecs", region_name="us-east-2")
@@ -19,6 +27,25 @@ def mock_ecs_cluster(mock_ecs_client):
     name = "test-cluster"
     mock_ecs_client.create_cluster(clusterName=name)
     return name
+
+
+def test_run_task_fargate(mock_ecs_client, mock_ecs_cluster):
+    import pdb; pdb.set_trace()
+    client = ECSClient(client=mock_ecs_client)
+    client.run_task(launch_type="fargate")
+    pass
+
+
+def test_run_task_ecs(mock_ecs_client, mock_ecs_cluster):
+    pass
+
+
+def test_run_task_raises(mock_ecs_client, mock_ecs_cluster):
+    pass
+
+
+def test_stop_task(mock_ecs_client, mock_ecs_cluster):
+    pass
 
 
 @pytest.fixture
