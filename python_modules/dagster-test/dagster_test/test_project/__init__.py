@@ -77,7 +77,16 @@ def build_and_tag_test_image(tag):
     base_python = "3.7.8"
 
     # Build and tag local dagster test image
-    return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
+    return subprocess.check_output(
+        [
+            "docker",
+            "-f",
+            "../../Dockerfile",
+            "--build-arg", f"PYTHON_VERSION={base_python}",
+            "-t", tag
+        ],
+        cwd=get_test_repo_path()
+    )
 
 
 def get_test_project_recon_pipeline(pipeline_name, container_image=None):

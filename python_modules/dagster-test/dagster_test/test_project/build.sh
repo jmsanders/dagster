@@ -27,30 +27,31 @@ IMAGE_TAG=$2
 
 pushd $BASE_DIR
 
-mkdir -p modules
-
-cp $GOOGLE_APPLICATION_CREDENTIALS ./modules/gac.json
-
-echo -e "--- \033[32m:truck: Copying files...\033[0m"
-cp -R $ROOT/python_modules/dagster \
-      $ROOT/python_modules/dagit \
-      $ROOT/python_modules/dagster-graphql \
-      $ROOT/python_modules/libraries/dagster-airflow \
-      $ROOT/python_modules/libraries/dagster-aws \
-      $ROOT/python_modules/libraries/dagster-celery \
-      $ROOT/python_modules/libraries/dagster-celery-k8s \
-      $ROOT/python_modules/libraries/dagster-celery-docker \
-      $ROOT/python_modules/libraries/dagster-cron \
-      $ROOT/python_modules/libraries/dagster-docker \
-      $ROOT/python_modules/libraries/dagster-pandas \
-      $ROOT/python_modules/libraries/dagster-postgres \
-      $ROOT/python_modules/libraries/dagster-gcp \
-      $ROOT/python_modules/libraries/dagster-k8s \
-      modules/
-
-find . \( -name '*.egg-info' -o -name '*.tox' -o -name 'dist' \) | xargs rm -rf
-
-echo -e "--- \033[32m:docker: Building Docker image\033[0m"
+# mkdir -p modules
+#
+# # cp $GOOGLE_APPLICATION_CREDENTIALS ./modules/gac.json
+# touch ./modules/gac.json
+#
+# echo -e "--- \033[32m:truck: Copying files...\033[0m"
+# cp -R $ROOT/python_modules/dagster \
+#       $ROOT/python_modules/dagit \
+#       # $ROOT/python_modules/dagster-graphql \
+#       # $ROOT/python_modules/libraries/dagster-airflow \
+#       # $ROOT/python_modules/libraries/dagster-aws \
+#       # $ROOT/python_modules/libraries/dagster-celery \
+#       # $ROOT/python_modules/libraries/dagster-celery-k8s \
+#       # $ROOT/python_modules/libraries/dagster-celery-docker \
+#       # $ROOT/python_modules/libraries/dagster-cron \
+#       # $ROOT/python_modules/libraries/dagster-docker \
+#       # $ROOT/python_modules/libraries/dagster-pandas \
+#       # $ROOT/python_modules/libraries/dagster-postgres \
+#       # $ROOT/python_modules/libraries/dagster-gcp \
+#       # $ROOT/python_modules/libraries/dagster-k8s \
+#       modules/
+#
+# find . \( -name '*.egg-info' -o -name '*.tox' -o -name 'dist' \) | xargs rm -rf
+#
+# echo -e "--- \033[32m:docker: Building Docker image\033[0m"
 
 PYTHON_SLIM_IMAGE="python:${PYTHON_VERSION}-slim"
 BASE_IMAGE=${BASE_IMAGE:=$PYTHON_SLIM_IMAGE}

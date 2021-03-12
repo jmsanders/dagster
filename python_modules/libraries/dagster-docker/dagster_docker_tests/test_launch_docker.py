@@ -73,7 +73,7 @@ def test_launch_docker_image_on_pipeline_config():
         )
         instance.launch_run(run.run_id, external_pipeline)
 
-        poll_for_finished_run(instance, run.run_id, timeout=60)
+        poll_for_finished_run(instance, run.run_id, timeout=60) #TODO: Reduce timeout
 
         assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
 
@@ -131,7 +131,7 @@ def test_terminate_launched_docker_run():
         assert instance.run_launcher.can_terminate(run_id)
         assert instance.run_launcher.terminate(run_id)
 
-        terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
+        terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30) #TODO: Reduce timeout
         terminated_pipeline_run = instance.get_run_by_id(run_id)
         assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
 
@@ -230,6 +230,6 @@ def test_launch_docker_image_on_instance_config():
         )
         instance.launch_run(run.run_id, external_pipeline)
 
-        poll_for_finished_run(instance, run.run_id, timeout=60)
+        poll_for_finished_run(instance, run.run_id, timeout=60) #TODO: Reduce timeout
 
         assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
